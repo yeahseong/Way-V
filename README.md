@@ -14,7 +14,7 @@
 ![RTX3090](https://img.shields.io/badge/RTX_3090-90_epochs-76B900?logo=nvidia&logoColor=white)
 ![GradCAM](https://img.shields.io/badge/Grad--CAM-Explainability-6250d6)
 
-[논문 전문](docs/paper.pdf) · [발표자료](docs/presentation.pdf) · [실험 결과](#실험-결과) · [팀 저장소](https://github.com/wayv2026-star/WayV_Detection)
+[논문 전문](docs/paper.pdf) · [발표자료](docs/presentation.pdf) · [데이터셋 구축 노트북](notebooks/) · [실험 결과](#실험-결과) · [팀 저장소](https://github.com/wayv2026-star/WayV_Detection)
 
 </div>
 
@@ -29,7 +29,7 @@
 | 접근 | 이중 주파수 프레임워크 DFFreq(DWT + FFT) 도입 후 학습 도메인을 바꿔 가며 일반화 성능 검증 |
 | 학습 | FFHQ 실제 얼굴 40,000장 + ProGAN 생성 얼굴 40,000장 · RTX 3090 · 90 epochs |
 | 평가 | GAN 12종 · Diffusion 4종 · Face Swap 5종 · Personalized 2종, 총 **23개 생성 모델** |
-| **내 역할** | **선행연구 재현(Frank et al.) · 모델 학습 및 23종 테스트 · 결과 분석** · 발표(실험·결과 파트) |
+| **내 역할** | **데이터셋 구축(8만 장 생성·수집) · 선행연구 재현(Frank et al.) · 모델 학습 및 23종 테스트 · 결과 분석** · 발표(실험·결과 파트) |
 
 ## 문제: 탐지 모델은 "본 적 있는 가짜"만 잡는다
 
@@ -72,6 +72,23 @@ DWT는 이미지를 저주파(LL)와 세 방향의 고주파(LH·HL·HH)로 분�
 두 분기의 출력은 λ=0.4(DWT) : 0.6(FFT)으로 가중합해 최종 분류합니다. 각 분기에는 RSWAttention 블록이 붙어, 국소 어텐션으로 세부 흔적을 잡고 전역 MLP로 맥락을 유지한 뒤 둘을 결합합니다.
 
 ![RSWAttention 블록](figures/rswattention.png)
+
+## 데이터셋 구축
+
+논문에는 "FFHQ 40,000장 + ProGAN 40,000장"으로 한 줄 적혀 있지만, 이 8만 장은 기존 데이터셋을 받아 쓴 것이 아니라 **직접 생성하고 수집한 것**입니다. 과정은 [`notebooks/`](notebooks/)에 정리했습니다.
+
+| 구분 | 구성 | 방법 |
+|---|---|---|
+| 학습 Real | FFHQ 40,000장 | HuggingFace 스트리밍 수집 (이어받기 지원) |
+| 학습 Fake | ProGAN 40,000장 | 사전학습 ProGAN으로 **직접 생성** (약 1시간 25분, 12.6GB) |
+| 테스트 | 23개 모델 × (Real 2,000 / Fake 2,000) | 공개 데이터셋 수집 + Diffusion 3종 직접 구축 |
+
+데이터를 만들면서 신경 쓴 지점들입니다.
+
+- **학습/테스트 분리** — 테스트용 Real도 FFHQ에서 가져와야 했는데 학습 데이터와 겹치면 성능이 부풀려집니다. 스트리밍에 `skip(40000).take(12000)`을 적용해 학습에 쓴 앞 4만 장을 건너뛰고 그다음 구간만 테스트용으로 썼습니다.
+- **무손실 PNG 통일** — 이 연구는 DWT·FFT로 고주파 아티팩트를 보는데, JPEG 재압축은 바로 그 고주파를 깎아냅니다. 전 과정을 PNG로 통일했습니다.
+- **1:1 균형** — 모델마다 Real·Fake를 2,000장씩 맞추고 무작위 샘플링해 특정 구도로 치우치지 않게 했습니다.
+- **Drive I/O 병목 제거** — 8만 장을 Drive에서 직접 읽으면 GPU가 놀아서, Colab 로컬 디스크로 복사한 뒤 학습했습니다.
 
 ## 실험 결과
 
@@ -138,6 +155,7 @@ DWT는 이미지를 저주파(LL)와 세 방향의 고주파(LH·HL·HH)로 분�
 ```
 .
 ├── README.md
+├── notebooks/              데이터셋 구축·학습 노트북 (직접 작업한 부분)
 ├── docs/
 │   ├── paper.pdf           논문 전문 (16p)
 │   └── presentation.pdf    발표자료 (34p)

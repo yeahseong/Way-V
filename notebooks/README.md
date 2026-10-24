@@ -10,7 +10,7 @@
 | [01_collect_datasets](01_collect_datasets.ipynb) | FFHQ 실제 얼굴 · StyleGAN2/3 생성 얼굴 수집, 폴더 구조 설계 | 초기 학습 데이터 |
 | [02_generate_progan_faces](02_generate_progan_faces.ipynb) | **ProGAN으로 가짜 얼굴 40,000장 생성** + FFHQ 실제 40,000장 수집 | 최종 학습셋 8만 장 |
 | [03_build_diffusion_testset](03_build_diffusion_testset.ipynb) | SDXL · FLUX1_dev · FLUX1_schnell 테스트셋 구축 | Diffusion 테스트셋 12,000장 |
-| [04_train_dffreq](04_train_dffreq.ipynb) | DFFreq 학습 실행 (Colab A100) | 학습된 탐지 모델 |
+| [04_train_dffreq](04_train_dffreq.ipynb) | Colab 학습 시도와 I/O 병목 (A100) | RTX 3090으로 전환한 근거 |
 | [05_verify_dataset](05_verify_dataset.ipynb) | 클래스별 이미지 개수 검증 | 12개 모델 × (Real 2,000 / Fake 2,000) 확인 |
 
 ## 데이터 구성
@@ -32,7 +32,7 @@
 
 **고주파 보존을 위한 PNG 통일** — 이 연구는 DWT·FFT로 고주파 아티팩트를 보는데, JPEG 재압축은 바로 그 고주파를 깎아냅니다. 모든 데이터를 무손실 PNG로 변환해 판단 근거가 훼손되지 않도록 했습니다. ([03](03_build_diffusion_testset.ipynb))
 
-**Drive I/O 병목 제거** — 8만 장을 Drive에 마운트한 채 학습하면 데이터 로딩이 병목이 되어, 전체를 Colab 로컬 디스크로 복사한 뒤 학습했습니다. 재사용을 위해 `tar.gz`로 묶어 보관했습니다. ([04](04_train_dffreq.ipynb))
+**데이터가 커지면 GPU가 아니라 I/O가 병목** — Colab A100에서 batch 128로 학습을 시도했지만, 8만 장을 Drive에 마운트한 채 읽느라 DataLoader 워커가 매번 타임아웃으로 멈췄습니다. `num_threads` 조정, 검증 경로 우회, 79,638개 파일을 로컬 SSD로 전량 복사까지 시도했고, 결국 런타임 제한에 막혀 **연구실 RTX 3090을 빌려 최종 학습을 완주**했습니다. ([04](04_train_dffreq.ipynb))
 
 **평가 균형 맞추기** — 모델마다 Real 2,000 / Fake 2,000으로 1:1을 맞추고, 특정 프롬프트나 구도로 치우치지 않도록 무작위 샘플링했습니다. 학습 전에는 항상 개수 검증을 먼저 돌렸습니다. ([03](03_build_diffusion_testset.ipynb), [05](05_verify_dataset.ipynb))
 

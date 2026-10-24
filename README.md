@@ -7,7 +7,7 @@
 국립한국해양대학교 전자전기정보공학부 데이터사이언스전공 · 지도교수 이정훈 · 2026.05<br/>
 팀 Way-V (3인) · 박지민 · 심준용 · **정예성**
 
-![Python](https://img.shields.io/badge/Python-3.9-3776AB?logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)
 ![DWT](https://img.shields.io/badge/DWT-Discrete_Wavelet-2a78d6)
 ![FFT](https://img.shields.io/badge/FFT-Fast_Fourier-eb6834)
